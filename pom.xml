@@ -23,7 +23,6 @@
     </developers>
     <modules>
         <module>Tree-framework</module>
-        <module>Tree-admin</module>
         <module>Tree-blog</module>
     </modules>
     <scm>
