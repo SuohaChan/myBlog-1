@@ -39,7 +39,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>com/tree/TreeBlogApplication</mainClass>
+                    <mainClass>com.tree.TreeBlogApplication</mainClass>
                 </configuration>
             </plugin>
         </plugins>
