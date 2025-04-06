@@ -20,7 +20,7 @@ public class OssUploadServiceImpl implements UploadService {
     public ResponseResult uploadImg(MultipartFile img) {
         String originalFilename = img.getOriginalFilename();
         //对原始文件名进行判断
-        if(!originalFilename.endsWith(".png")){
+        if(!originalFilename.endsWith(".png") && !originalFilename.endsWith(".jpg")){
             throw new SystemException(AppHttpCodeEnum.FILE_TYPE_ERROR);
         }
         //如果判断通过上传文件到OSS

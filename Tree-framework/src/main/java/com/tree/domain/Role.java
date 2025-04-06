@@ -49,4 +49,8 @@ public class Role  {
     private Date updateTime;
     //备注
     private String remark;
+
+    //关联菜单id数组，不是表中的字段  用来接收参数使用
+    @TableField(exist = false)
+    private Long[] menuIds;
 }

@@ -1,0 +1,52 @@
+# 默认忽略的文件
+/shelf/
+/workspace.xml
+# 基于编辑器的 HTTP 客户端请求
+/httpRequests/
+# Datasource local storage ignored files
+/dataSources/
+/dataSources.local.xml
+# 忽略 IntelliJ IDEA 相关文件和目录
+.idea/
+*.iml
+
+# 构建和编译产物
+out/
+target/
+build/
+dist/
+
+# 依赖管理相关
+node_modules/
+.gradle/
+.venv/
+pip-selfcheck.json
+
+# 日志文件
+*.log
+logs/
+
+# 数据库文件
+*.sqlite
+*.db
+
+# 临时文件和备份文件
+*.bak
+*.swp
+*.tmp
+
+# 环境变量文件
+.env
+
+# 图片缓存
+.cache/
+
+# 系统生成的文件
+.DS_Store
+Thumbs.db
+
+# 测试报告
+test-reports/
+
+# 本地配置文件
+local.properties

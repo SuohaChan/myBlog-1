@@ -6,6 +6,9 @@ import com.tree.domain.ResponseResult;
 import com.tree.domain.Tag;
 import com.tree.dto.TagListDto;
 import com.tree.vo.PageVo;
+import com.tree.vo.TagVo;
+
+import java.util.List;
 
 /**
  * @author 35238
@@ -17,4 +20,9 @@ public interface TagService extends IService<Tag> {
     ResponseResult<PageVo> pageTagList(Integer pageNum, Integer pageSize, TagListDto tagListDto);
 
     ResponseResult updateTagName(Long id,String name,String remark);
+    //删除标签
+    void myRemoveById(Long id);
+
+    //写博文-查询文章标签的接口
+    List<TagVo> listAllTag();
 }

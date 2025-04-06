@@ -1,6 +1,7 @@
 package com.tree.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.tree.constans.SystemCanstants;
 import com.tree.domain.Article;
@@ -11,11 +12,14 @@ import com.tree.service.ArticleService;
 import com.tree.service.CategoryService;
 import com.tree.utils.BeanCopyUtils;
 import com.tree.vo.CategoryVo;
+import com.tree.vo.PageVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -56,6 +60,34 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category>  
 
         return ResponseResult.okResult(categoryVos);
     }
+    //----------------------------后台-查询文章分类的接口-------------------------------------
+    @Override
+    public List<CategoryVo> listAllCategory() {
+        LambdaQueryWrapper<Category> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Category::getStatus, SystemCanstants.NORMAL);
+        List<Category> list = list(wrapper);
+        List<CategoryVo> categoryVos = BeanCopyUtils.copyBeanList(list, CategoryVo.class);
+        return categoryVos;
+    }
 
+    @Override
+    public PageVo selectCategoryPage(Category category, Integer pageNum, Integer pageSize) {
+        LambdaQueryWrapper<Category> qureyWrapper = new LambdaQueryWrapper<>();
 
+        qureyWrapper.like(StringUtils.hasText(category.getName()), Category::getName, category.getName());
+        qureyWrapper.eq(Objects.nonNull(category.getStatus()),Category::getStatus, category.getStatus());
+
+        Page<Category> page = new Page<>();
+        page.setCurrent(pageNum);
+        page.setSize(pageSize);
+        page(page, qureyWrapper);
+
+        List<Category> categoryList = page.getRecords();
+
+        PageVo pageVo = new PageVo();
+        pageVo.setTotal(page.getTotal());
+        pageVo.setRows(categoryList);
+
+        return pageVo;
+    }
 }

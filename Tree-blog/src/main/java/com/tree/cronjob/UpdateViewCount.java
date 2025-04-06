@@ -29,6 +29,11 @@ public class UpdateViewCount {
     //操作数据库。ArticleService是我们在huanf-framework工程写的接口
     private ArticleService articleService;
 
+
+    // 定义一个 ThreadLocal 用于标记是否为定时任务更新浏览量
+    private static final ThreadLocal<Boolean> IS_VIEW_COUNT_UPDATE_TASK = ThreadLocal.withInitial(() -> false);
+
+
     //每隔3分钟，把redis的浏览量数据更新到mysql数据库
     @Scheduled(cron = "0/10 * * * * ?")
     public void updateViewCount(){
@@ -45,4 +50,10 @@ public class UpdateViewCount {
         //方便在控制台看打印信息
         System.out.println("redis的文章浏览量数据已更新到数据库，现在的时间是: "+ LocalTime.now());
     }
+
+    // 提供一个静态方法用于获取标记
+    public static boolean isViewCountUpdateTask() {
+        return IS_VIEW_COUNT_UPDATE_TASK.get();
+    }
 }
+

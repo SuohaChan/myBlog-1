@@ -3,12 +3,10 @@ package com.tree.handler.exception;
 import com.tree.domain.ResponseResult;
 import com.tree.enums.AppHttpCodeEnum;
 import com.tree.exception.SystemException;
-
-
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
+import org.springframework.security.access.AccessDeniedException;
 
 //@RestControllerAdvice 是 Spring 框架里的一个注解，
 // 它把 @ControllerAdvice 和 @ResponseBody 两个注解的功能结合起来，
@@ -30,6 +28,13 @@ public class GlobalExceptionHandler {
         return ResponseResult.errorResult(e.getCode(),e.getMsg());
     }
 
+    // 处理SpringSecurity的权限异常
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseResult handleAccessDeniedException(AccessDeniedException e) {
+        return ResponseResult.errorResult(AppHttpCodeEnum.NO_OPERATOR_AUTH.getCode(),e.getMessage());//枚举值是500
+    }
+
+    //其它异常交给这里处理
     @ExceptionHandler(Exception.class)
     public ResponseResult exceptionHandler(Exception e){
         //打印异常信息

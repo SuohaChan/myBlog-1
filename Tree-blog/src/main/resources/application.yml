@@ -1,4 +1,4 @@
-server:
+﻿server:
   port: 7777
 
 springdoc:
@@ -8,7 +8,6 @@ springdoc:
   swagger-ui:
     enabled: true
     path: /blog/swagger-ui/index.html
-
 
 spring:
   datasource:
@@ -23,12 +22,18 @@ spring:
       max-request-size: 100MB
       # 单个上传文件的最大允许大小
       max-file-size: 20MB
+
   # springboot 2.6版本之后需要配置ant_path_matcher才能生使swagger生成接口文档
   # 我们目前的springboot版本是2.5.0，不需要配置ant_path_matcher也可正常使用swagger
   data:
     redis:
       host: 127.0.0.1
       port: 6379
+
+
+  messages:
+    encoding: UTF-8
+
 
 
 

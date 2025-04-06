@@ -6,20 +6,24 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.tree.constans.SystemCanstants;
 import com.tree.domain.Article;
+import com.tree.domain.ArticleTag;
 import com.tree.domain.Category;
 import com.tree.domain.ResponseResult;
+import com.tree.dto.AddArticleDto;
+import com.tree.dto.ArticleDto;
 import com.tree.mapper.ArticleMapper;
 import com.tree.service.ArticleService;
+import com.tree.service.ArticleTagService;
+import com.tree.service.ArticleVoService;
 import com.tree.service.CategoryService;
 import com.tree.utils.BeanCopyUtils;
 import com.tree.utils.RedisCache;
-import com.tree.vo.ArticleDetailVo;
-import com.tree.vo.ArticleListVo;
-import com.tree.vo.HotArticleVo;
-import com.tree.vo.PageVo;
+import com.tree.vo.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -41,6 +45,12 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
     @Autowired
     private RedisCache redisCache;
+
+    @Autowired
+    private ArticleTagService articleTagService;
+
+    @Autowired
+    private ArticleVoService articleVoService;
 
     @Override
     public ResponseResult hotArticleList() {
@@ -115,35 +125,20 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         Page<Article> page = new Page<>(pageNum,pageSize);
         page(page,lambdaQueryWrapper);
 
-        /**
-         * 解决categoryName字段没有返回值的问题。在分页之后，封装成ArticleListVo之前，进行处理。第一种方式，用for循环遍历的方式
-         */
-        ////用categoryId来查询categoryName(category表的name字段)，也就是查询'分类名称'
-        //List<Article> articles = page.getRecords();
-        //for (Article article : articles) {
-        //    //'article.getCategoryId()'表示从article表获取category_id字段，然后作为查询category表的name字段
-        //    Category category = categoryService.getById(article.getCategoryId());
-        //    //把查询出来的category表的name字段值，也就是article，设置给Article实体类的categoryName成员变量
-        //    article.setCategoryName(category.getName());
-        //
-        //}
-
-        /**
-         * 解决categoryName字段没有返回值的问题。在分页之后，封装成ArticleListVo之前，进行处理。第二种方式，用stream流的方式
-         */
-        //用categoryId来查询categoryName(category表的name字段)，也就是查询'分类名称'
         List<Article> articles = page.getRecords();
 
         articles.stream()
                 .map(new Function<Article, Article>() {
                     @Override
                     public Article apply(Article article) {
-                        //'article.getCategoryId()'表示从article表获取category_id字段，然后作为查询category表的name字段
                         Category category = categoryService.getById(article.getCategoryId());
-                        String name = category.getName();
-                        //把查询出来的category表的name字段值，也就是article，设置给Article实体类的categoryName成员变量
-                        article.setCategoryName(name);
-                        //把查询出来的category表的name字段值，也就是article，设置给Article实体类的categoryName成员变量
+                        if (category != null) {
+                            String name = category.getName();
+                            article.setCategoryName(name);
+                        } else {
+                            // 处理category为null的情况，例如设置默认值
+                            article.setCategoryName("未知分类");
+                        }
                         return article;
                     }
                 })
@@ -200,5 +195,77 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         //用户每从mysql根据文章id查询一次浏览量，那么redis的浏览量就增加1
         redisCache.incrementCacheMapValue("article:viewCount",id.toString(),1);
         return ResponseResult.okResult();
+    }
+    //-------------------------------------增加博客文章-----------------------------------
+
+
+    @Override
+    public ResponseResult add(AddArticleDto articleDto) {
+        ArticleVo articleVo = BeanCopyUtils.copyBean(articleDto, ArticleVo.class);
+        articleVoService.save(articleVo);
+
+        List<ArticleTag> articleTags = articleDto.getTags().stream()
+                .map(tagId -> new ArticleTag(articleVo.getId(), tagId))
+                .collect(Collectors.toList());
+
+        //添加 博客和标签的关联
+        articleTagService.saveBatch(articleTags);
+        return ResponseResult.okResult();
+
+    }
+    //---------------------------管理后台(文章管理)-分页查询文章----------------------------
+    @Override
+    public PageVo selectArticlePage(Article article, Integer pageNum, Integer pageSize) {
+        LambdaQueryWrapper<Article> queryWrapper = new LambdaQueryWrapper();
+
+        queryWrapper.like(StringUtils.hasText(article.getTitle()),Article::getTitle, article.getTitle());
+        queryWrapper.like(StringUtils.hasText(article.getSummary()),Article::getSummary, article.getSummary());
+
+        Page<Article> page = new Page<>();
+        page.setCurrent(pageNum);
+        page.setSize(pageSize);
+        page(page,queryWrapper);
+
+        //转换成VO
+        List<Article> articles = page.getRecords();
+
+        PageVo pageVo = new PageVo();
+        pageVo.setTotal(page.getTotal());
+        pageVo.setRows(articles);
+        return pageVo;
+    }
+    //----------------------------修改文章-①根据文章id查询对应的文章--------------------------------
+
+    @Override
+    //①先查询根据文章id查询对应的文章
+    public ArticleByIdVo getInfo(Long id) {
+        Article article = getById(id);
+        //获取关联标签
+        LambdaQueryWrapper<ArticleTag> articleTagLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        articleTagLambdaQueryWrapper.eq(ArticleTag::getArticleId,article.getId());
+        List<ArticleTag> articleTags = articleTagService.list(articleTagLambdaQueryWrapper);
+        List<Long> tags = articleTags.stream().map(articleTag -> articleTag.getTagId()).collect(Collectors.toList());
+
+        ArticleByIdVo articleVo = BeanCopyUtils.copyBean(article,ArticleByIdVo.class);
+        articleVo.setTags(tags);
+        return articleVo;
+    }
+
+
+    @Override
+    //②然后才是修改文章
+    public void edit(ArticleDto articleDto) {
+        Article article = BeanCopyUtils.copyBean(articleDto, Article.class);
+        //更新博客信息
+        updateById(article);
+        //删除原有的 标签和博客的关联
+        LambdaQueryWrapper<ArticleTag> articleTagLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        articleTagLambdaQueryWrapper.eq(ArticleTag::getArticleId,article.getId());
+        articleTagService.remove(articleTagLambdaQueryWrapper);
+        //添加新的博客和标签的关联信息
+        List<ArticleTag> articleTags = articleDto.getTags().stream()
+                .map(tagId -> new ArticleTag(articleDto.getId(), tagId))
+                .collect(Collectors.toList());
+        articleTagService.saveBatch(articleTags);
     }
 }
